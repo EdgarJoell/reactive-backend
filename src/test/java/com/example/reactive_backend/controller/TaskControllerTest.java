@@ -1,7 +1,8 @@
 package com.example.reactive_backend.controller;
 
-import com.example.reactive_backend.exception.CouldNotInsertException;
-import com.example.reactive_backend.exception.NotFoundException;
+import com.example.reactive_backend.errorhandling.exception.BadRequestException;
+import com.example.reactive_backend.errorhandling.exception.CouldNotInsertException;
+import com.example.reactive_backend.errorhandling.exception.NotFoundException;
 import com.example.reactive_backend.model.Task;
 import com.example.reactive_backend.service.TaskService;
 import org.bson.types.ObjectId;
@@ -10,10 +11,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.annotation.Description;
 import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -26,6 +31,7 @@ public class TaskControllerTest {
     private TaskController controller;
 
     @Test
+    @Description("Tests a 200 response for the getAllTasks() endpoint workflow and returns data.")
     void testGetAllTasksEndpointHappyPathWithData() {
         Task task1 = Task.builder().id(new ObjectId()).title("Test Title One").description("The testing description for test Title One").completed(false).build();
         Task task2 = Task.builder().id(new ObjectId()).title("Test Title Two").description("The testing description for test Title Two").completed(true).build();
@@ -44,6 +50,7 @@ public class TaskControllerTest {
     }
 
     @Test
+    @Description("Tests a 200 response for the getAllTasks() endpoint workflow and returns an empty Flux.")
     void testGetAllTasksEndpointHappyPathWithEmptyData() {
         when(service.getAllTasks()).thenReturn(Flux.empty());
 
@@ -55,6 +62,7 @@ public class TaskControllerTest {
     }
 
     @Test
+    @Description("Tests a 500 response for the getAllTasks() endpoint workflow and returns a RuntimeException class to show that the server failed.")
     void testGetAllTasksEndpointUnhappyPath() {
         when(service.getAllTasks()).thenReturn(Flux.error(new RuntimeException("An error occurred: ")));
 
@@ -66,6 +74,7 @@ public class TaskControllerTest {
     }
 
     @Test
+    @Description("Tests a 200 response for the getOneTask() endpoint workflow and returns data.")
     void testGetOneTaskEndpointHappyPath() {
         String idString = "685724022e21a9baae11f00c";
         Task task = Task.builder().id(new ObjectId("685724022e21a9baae11f00c")).title("Get One Task Title").description("The test description so that we can test getOneTask endpoint functionality").completed(true).build();
@@ -85,12 +94,13 @@ public class TaskControllerTest {
     }
 
     @Test
+    @Description("Tests a 404 response for the getOneTask() endpoint workflow and returns the NotFoundException class.")
     void testGetOneTaskEndpointUnhappyPathWith404Error() {
         String idString = "685724022e21a9baae11f00c";
 
         when(service.getOneTask(new ObjectId(idString))).thenReturn(Mono.error(new NotFoundException("Task could not be found!")));
 
-        Mono<Task> res = controller.getOneTask("685724022e21a9baae11f00c");
+        Mono<Task> res = controller.getOneTask(idString);
 
         StepVerifier.create(res)
                 .expectError(NotFoundException.class)
@@ -98,12 +108,13 @@ public class TaskControllerTest {
     }
 
     @Test
+    @Description("Tests a 500 response for the getOneTask() endpoint workflow and returns RuntimeException so show the server failed.")
     void testGetOneTaskEndpointUnhappyPath() {
         String idString = "685724022e21a9baae11f00c";
 
         when(service.getOneTask(new ObjectId(idString))).thenReturn(Mono.error(new RuntimeException("An error occurred: ")));
 
-        Mono<Task> res = controller.getOneTask("685724022e21a9baae11f00c");
+        Mono<Task> res = controller.getOneTask(idString);
 
         StepVerifier.create(res)
                 .expectError(RuntimeException.class)
@@ -111,6 +122,19 @@ public class TaskControllerTest {
     }
 
     @Test
+    @Description("Tests a 400 response for the getOneTask() endpoint workflow and returns RuntimeException so show the server failed.")
+    void testGetOneTaskEndpointUnhappyPathWithInvalidObjectIdString() {
+        String idString = "This is the invalid ObjectID string.";
+
+        Mono<Task> res = controller.getOneTask(idString);
+
+        StepVerifier.create(res)
+                .expectError(BadRequestException.class)
+                .verify();
+    }
+
+    @Test
+    @Description("Tests a 201 response for the createOneTask() endpoint workflow and returns data.")
     void testCreateNewTaskHappyPath() {
         Task task1 = Task.builder().id(new ObjectId()).title("Test Title One").description("The testing description for test Title One").completed(false).build();
 
@@ -131,6 +155,7 @@ public class TaskControllerTest {
     }
 
     @Test
+    @Description("Tests a 500 response for the createOneTask() endpoint workflow and returns CouldNotInsertException class.")
     void testCreateNewTaskUnhappyPath() {
         Task task = Task.builder().title("Test Title One").description("The testing description for test Title One").completed(false).build();
 
@@ -139,7 +164,52 @@ public class TaskControllerTest {
         Mono<Task> res = controller.createOneTask(task);
 
         StepVerifier.create(res)
-                .expectError()
+                .expectError(CouldNotInsertException.class)
+                .verify();
+    }
+
+    @Test
+    @Description("Tests a 201 response for the createTasks() endpoint workflow and returns data.")
+    void testCreateTasksHappyPath() {
+        Task task1 = Task.builder().id(new ObjectId()).title("Test Group Insert Title One").description("The testing description for test Title One").completed(false).build();
+        Task task2 = Task.builder().id(new ObjectId()).title("Test Group Insert Title Two").description("The testing description for test Title Two").completed(true).build();
+        ArrayList<Task> taskList = new ArrayList<>(Arrays.asList(task1, task2));
+
+        Flux<Task> tasksFlux = Flux.just(task1);
+
+        when(service.createTasks(taskList)).thenReturn(tasksFlux);
+
+        Flux<Task> res = controller.createTasks(taskList);
+
+        StepVerifier.create(res)
+                .consumeNextWith(actual -> {
+                    assertThat(actual.getId()).isEqualTo(taskList.get(0).getId());
+                    assertThat(actual.getTitle()).isEqualTo(taskList.get(0).getTitle());
+                    assertThat(actual.getDescription()).isEqualTo(taskList.get(0).getDescription());
+                    assertThat(actual.isCompleted()).isEqualTo(taskList.get(0).isCompleted());
+                })
+                .consumeNextWith(actual ->{
+                    assertThat(actual.getId()).isEqualTo(taskList.get(1).getId());
+                    assertThat(actual.getTitle()).isEqualTo(taskList.get(1).getTitle());
+                    assertThat(actual.getDescription()).isEqualTo(taskList.get(1).getDescription());
+                    assertThat(actual.isCompleted()).isEqualTo(taskList.get(1).isCompleted());
+                })
+                .expectComplete();
+    }
+
+    @Test
+    @Description("Tests a 500 response for the createTasks() endpoint workflow and returns CouldNotInsertException class.")
+    void testCreateTasksUnhappyPath() {
+        Task task1 = Task.builder().id(new ObjectId()).title("Test Group Insert Title One").description("The testing description for test Title One").completed(false).build();
+        Task task2 = Task.builder().id(new ObjectId()).title("Test Group Insert Title Two").description("The testing description for test Title Two").completed(true).build();
+        ArrayList<Task> taskList = new ArrayList<>(Arrays.asList(task1, task2));
+
+        when(service.createTasks(taskList)).thenReturn(Flux.error(new CouldNotInsertException("Could not insert Document into 'Tasks' Collection", HttpStatus.INTERNAL_SERVER_ERROR)));
+
+        Flux<Task> res = controller.createTasks(taskList);
+
+        StepVerifier.create(res)
+                .expectError(CouldNotInsertException.class)
                 .verify();
     }
 }
