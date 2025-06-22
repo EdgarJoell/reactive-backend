@@ -17,6 +17,6 @@ public class TaskService {
     }
 
     public Mono<Task> createOneTask(Task task) {
-        return taskRepository.createTask(task);
+        return taskRepository.createOneTask(task);
     }
 }

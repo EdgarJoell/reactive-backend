@@ -23,7 +23,7 @@ public class TaskRepository {
                 .onErrorMap(err -> new RuntimeException("An error occurred: ", err));
     }
 
-    public Mono<Task> createTask(Task newTask) {
+    public Mono<Task> createOneTask(Task newTask) {
         return mongoTemplate.insert(newTask)
                 .doOnSubscribe(sub -> log.info("Creating new Document in 'Tasks' Collection"))
                 .doOnSuccess(suc -> log.info("Successfully inserted task with into Collection."))
