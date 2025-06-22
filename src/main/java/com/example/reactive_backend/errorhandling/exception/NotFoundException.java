@@ -1,11 +1,12 @@
-package com.example.reactive_backend.exception;
+package com.example.reactive_backend.errorhandling.exception;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
+@ResponseStatus(HttpStatus.NOT_FOUND)
 public class NotFoundException extends RuntimeException {
 
     public NotFoundException(String message) {
         super(message);
-        HttpStatus httpStatus = HttpStatus.NOT_FOUND;
     }
 }
