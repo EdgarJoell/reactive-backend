@@ -1,5 +1,6 @@
 package com.example.reactive_backend.controller;
 
+import com.example.reactive_backend.exception.CouldNotInsertException;
 import com.example.reactive_backend.model.Task;
 import com.example.reactive_backend.service.TaskService;
 import org.bson.types.ObjectId;
@@ -8,9 +9,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -54,6 +58,39 @@ public class TaskControllerTest {
         when(service.getAllTasks()).thenReturn(Flux.error(new RuntimeException("An error occurred: ")));
 
         Flux<Task> res = controller.getAllTasks();
+
+        StepVerifier.create(res)
+                .expectError()
+                .verify();
+    }
+
+    @Test
+    void testCreateNewTaskHappyPath() {
+        Task task1 = Task.builder().id(new ObjectId()).title("Test Title One").description("The testing description for test Title One").completed(false).build();
+
+        Mono<Task> taskMono = Mono.just(task1);
+
+        when(service.createOneTask(task1)).thenReturn(taskMono);
+
+        Mono<Task> res = controller.createOneTask(task1);
+
+        StepVerifier.create(res)
+                .consumeNextWith(response -> {
+                    assertThat(response.getId()).isNotNull();
+                    assertThat(response.getTitle()).isEqualTo("Test Title One");
+                    assertThat(response.getDescription()).isEqualTo("The testing description for test Title One");
+                    assertThat(response.isCompleted()).isEqualTo(false);
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void testCreateNewTaskUnhappyPath() {
+        Task task = Task.builder().title("Test Title One").description("The testing description for test Title One").completed(false).build();
+
+        when(service.createOneTask(task)).thenReturn(Mono.error(new CouldNotInsertException("Could not insert Document into 'Tasks' Collection", HttpStatus.INTERNAL_SERVER_ERROR)));
+
+        Mono<Task> res = controller.createOneTask(task);
 
         StepVerifier.create(res)
                 .expectError()
