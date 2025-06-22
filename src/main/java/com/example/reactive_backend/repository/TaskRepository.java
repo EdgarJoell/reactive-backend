@@ -1,9 +1,11 @@
 package com.example.reactive_backend.repository;
 
 import com.example.reactive_backend.exception.CouldNotInsertException;
+import com.example.reactive_backend.exception.NotFoundException;
 import com.example.reactive_backend.model.Task;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
@@ -20,6 +22,15 @@ public class TaskRepository {
         return mongoTemplate.findAll(Task.class)
                 .doOnSubscribe(sub -> log.info("Attempting to retrieve all tasks from Collection"))
                 .doOnComplete(() -> log.info("Successfully retrieved all Tasks from Collection"))
+                .onErrorMap(err -> new RuntimeException("An error occurred: ", err));
+    }
+
+    public Mono<Task> getOneTask(ObjectId id) {
+        return mongoTemplate.findById(id, Task.class)
+                .doOnSubscribe(sub -> log.info("Searching for a Task with id: %s".formatted(id)))
+                .switchIfEmpty(Mono.error(new NotFoundException("A Task could not be found with this id: %s".formatted(id))))
+                .doOnSuccess(suc -> log.info("Found Task with id: %s".formatted(id)))
+                .doOnError(err -> log.error("Could not find task with id: %s".formatted(id)))
                 .onErrorMap(err -> new RuntimeException("An error occurred: ", err));
     }
 
