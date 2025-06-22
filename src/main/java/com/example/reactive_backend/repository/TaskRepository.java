@@ -5,7 +5,6 @@ import com.example.reactive_backend.model.Task;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
-import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
@@ -16,7 +15,6 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class TaskRepository {
     private final ReactiveMongoTemplate mongoTemplate;
-    private final MappingMongoConverter mapper;
 
     public Flux<Task> getAllTasks() {
         return mongoTemplate.findAll(Task.class)
