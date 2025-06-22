@@ -1,6 +1,7 @@
 package com.example.reactive_backend.controller;
 
 import com.example.reactive_backend.exception.CouldNotInsertException;
+import com.example.reactive_backend.exception.NotFoundException;
 import com.example.reactive_backend.model.Task;
 import com.example.reactive_backend.service.TaskService;
 import org.bson.types.ObjectId;
@@ -61,6 +62,51 @@ public class TaskControllerTest {
 
         StepVerifier.create(res)
                 .expectError()
+                .verify();
+    }
+
+    @Test
+    void testGetOneTaskEndpointHappyPath() {
+        String idString = "685724022e21a9baae11f00c";
+        Task task = Task.builder().id(new ObjectId("685724022e21a9baae11f00c")).title("Get One Task Title").description("The test description so that we can test getOneTask endpoint functionality").completed(true).build();
+
+        when(service.getOneTask(new ObjectId(idString))).thenReturn(Mono.just(task));
+
+        Mono<Task> res = controller.getOneTask("685724022e21a9baae11f00c");
+
+        StepVerifier.create(res)
+                .consumeNextWith(actual -> {
+                    assertThat(actual.getId().toString()).isEqualTo("685724022e21a9baae11f00c");
+                    assertThat(actual.getTitle()).isEqualTo("Get One Task Title");
+                    assertThat(actual.getDescription()).isEqualTo("The test description so that we can test getOneTask endpoint functionality");
+                    assertThat(actual.isCompleted()).isEqualTo(true);
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void testGetOneTaskEndpointUnhappyPathWith404Error() {
+        String idString = "685724022e21a9baae11f00c";
+
+        when(service.getOneTask(new ObjectId(idString))).thenReturn(Mono.error(new NotFoundException("Task could not be found!")));
+
+        Mono<Task> res = controller.getOneTask("685724022e21a9baae11f00c");
+
+        StepVerifier.create(res)
+                .expectError(NotFoundException.class)
+                .verify();
+    }
+
+    @Test
+    void testGetOneTaskEndpointUnhappyPath() {
+        String idString = "685724022e21a9baae11f00c";
+
+        when(service.getOneTask(new ObjectId(idString))).thenReturn(Mono.error(new RuntimeException("An error occurred: ")));
+
+        Mono<Task> res = controller.getOneTask("685724022e21a9baae11f00c");
+
+        StepVerifier.create(res)
+                .expectError(RuntimeException.class)
                 .verify();
     }
 
