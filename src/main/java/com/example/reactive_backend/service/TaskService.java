@@ -32,4 +32,9 @@ public class TaskService {
     public Flux<Task> createTasks(ArrayList<Task> tasks) {
         return taskRepository.createTasks(tasks);
     }
+
+    public Mono<Task> updateOneTask(String id, Task task) {
+        return taskRepository.updateOneTask(id, task)
+                .switchIfEmpty(Mono.error(new NotFoundException("Could not find task with id: %s".formatted(id))));
+    }
 }

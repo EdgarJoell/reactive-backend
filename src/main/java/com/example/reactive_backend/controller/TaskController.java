@@ -22,12 +22,12 @@ public class TaskController {
 
     @GetMapping(value = "/task")
     public Mono<Task> getOneTask(@RequestParam String id) {
-        try {
-            return taskService.getOneTask(new ObjectId(id));
-        } catch (IllegalArgumentException ex) {
+        if(checkIdIntegrity(id)) {
             log.error("The id: '%s' was not in the correct ObjectID format.".formatted(id));
             return Mono.error(new BadRequestException("The id: '%s' was not in the correct ObjectID format.".formatted(id)));
         }
+
+        return taskService.getOneTask(new ObjectId(id));
     }
 
     @GetMapping(value = "/tasks")
@@ -45,5 +45,19 @@ public class TaskController {
     @ResponseStatus(HttpStatus.CREATED)
     public Flux<Task> createTasks(@RequestBody ArrayList<Task> tasks) {
         return taskService.createTasks(tasks);
+    }
+
+    @PutMapping(value = "/task")
+    public Mono<Task> updateOneTask(@RequestParam String id, @RequestBody Task task) {
+        if(checkIdIntegrity(id)) {
+            log.error("The id: '%s' was not in the correct ObjectID format.".formatted(id));
+            return Mono.error(new BadRequestException("The id: '%s' was not in the correct ObjectID format.".formatted(id)));
+        }
+
+        return taskService.updateOneTask(id, task);
+    }
+
+    private boolean checkIdIntegrity(String id) {
+        return !ObjectId.isValid(id);
     }
 }
