@@ -1,11 +1,9 @@
 package com.example.reactive_backend.controller;
 
-import com.example.reactive_backend.errorhandling.exception.BadRequestException;
-import com.example.reactive_backend.errorhandling.exception.CouldNotInsertException;
-import com.example.reactive_backend.errorhandling.exception.CouldNotUpdateException;
-import com.example.reactive_backend.errorhandling.exception.NotFoundException;
+import com.example.reactive_backend.errorhandling.exception.*;
 import com.example.reactive_backend.model.Task;
 import com.example.reactive_backend.service.TaskService;
+import com.mongodb.client.result.DeleteResult;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -259,6 +257,46 @@ public class TaskControllerTest {
         Task task = Task.builder().title("Test Title One").description("The testing description for test Title One").completed(false).build();
 
         Mono<Task> res = controller.updateOneTask(idString, task);
+
+        StepVerifier.create(res)
+                .expectError(BadRequestException.class)
+                .verify();
+    }
+
+    @Test
+    @Description("Tests for 204 response for the deleteOneTask() endpoint and should return no content")
+    void testDeleteOneTaskEndpointHappyPath() {
+        ObjectId id = new ObjectId("685724022e21a9baae11f00f");
+
+        when(service.deleteOneTask(id)).thenReturn(Mono.empty());
+
+        Mono<DeleteResult> res = controller.deleteOneTask(id.toString());
+
+        StepVerifier.create(res)
+                .expectSubscription()
+                .expectNext()
+                .expectComplete();
+    }
+
+    @Test
+    @Description("Tests for 204 response for the deleteOneTask() endpoint and should return no content")
+    void testDeleteOneTaskEndpointUnhappyPath() {
+        ObjectId id = new ObjectId("685724022e21a9baae11f00f");
+
+        when(service.deleteOneTask(id)).thenReturn(Mono.error(new CouldNotDeleteException("Unexpected error. Could not delete.")));
+
+        Mono<DeleteResult> res = controller.deleteOneTask(id.toString());
+
+        StepVerifier.create(res)
+                .expectSubscription()
+                .expectError(CouldNotDeleteException.class)
+                .verify();
+    }
+
+    @Test
+    @Description("Tests for 204 response for the deleteOneTask() endpoint and should return no content")
+    void testDeleteOneTaskEndpointUnhappyPathWithBadId() {
+        Mono<DeleteResult> res = controller.deleteOneTask("Bad ID format");
 
         StepVerifier.create(res)
                 .expectError(BadRequestException.class)

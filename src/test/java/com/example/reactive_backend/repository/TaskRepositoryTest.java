@@ -1,8 +1,10 @@
 package com.example.reactive_backend.repository;
 
+import com.example.reactive_backend.errorhandling.exception.CouldNotDeleteException;
 import com.example.reactive_backend.errorhandling.exception.CouldNotInsertException;
 import com.example.reactive_backend.errorhandling.exception.CouldNotUpdateException;
 import com.example.reactive_backend.model.Task;
+import com.mongodb.client.result.DeleteResult;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,6 +28,7 @@ import java.util.Arrays;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -262,6 +265,43 @@ public class TaskRepositoryTest {
 
         StepVerifier.create(res)
                 .expectError(CouldNotUpdateException.class)
+                .verify();
+    }
+
+    @Test
+    @Description("Test the happy path to delete a Task object from the DB.")
+    void testDeleteOneTaskHappyPath() {
+        ObjectId id = new ObjectId("6857579a7b4c57437855095b");
+        Query query = new Query(Criteria.where("_id").is(id));
+        DeleteResult mockResult = mock(DeleteResult.class);
+        
+        when(mockResult.wasAcknowledged()).thenReturn(true);
+
+        when(db.remove(eq(query), eq(Task.class))).thenReturn(Mono.just(mockResult));
+
+        Mono<DeleteResult> res = repository.deleteOneTask(id);
+
+        StepVerifier.create(res)
+                .expectSubscription()
+                .expectNextMatches(DeleteResult::wasAcknowledged)
+                .verifyComplete();
+    }
+
+    @Test
+    @Description("Test the unhappy path to delete a Task object from the DB.")
+    void testDeleteOneTaskUnhappyPath() {
+        ObjectId id = new ObjectId("6857579a7b4c57437855095b");
+        Query query = new Query(Criteria.where("_id").is(id));
+        DeleteResult mockResult = mock(DeleteResult.class);
+
+        when(mockResult.wasAcknowledged()).thenReturn(false);
+
+        when(db.remove(eq(query), eq(Task.class))).thenReturn(Mono.just(mockResult));
+
+        Mono<DeleteResult> res = repository.deleteOneTask(id);
+
+        StepVerifier.create(res)
+                .expectError(CouldNotDeleteException.class)
                 .verify();
     }
 }
