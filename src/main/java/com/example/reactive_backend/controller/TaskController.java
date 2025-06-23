@@ -3,10 +3,12 @@ package com.example.reactive_backend.controller;
 import com.example.reactive_backend.errorhandling.exception.BadRequestException;
 import com.example.reactive_backend.model.Task;
 import com.example.reactive_backend.service.TaskService;
+import com.mongodb.client.result.DeleteResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -55,6 +57,17 @@ public class TaskController {
         }
 
         return taskService.updateOneTask(new ObjectId(id), task);
+    }
+
+    @DeleteMapping(value = "/task")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public Mono<DeleteResult> deleteOneTask(@RequestParam String id) {
+        if(checkIdIntegrity(id)) {
+            log.error("The id: '%s' was not in the correct ObjectID format.".formatted(id));
+            return Mono.error(new BadRequestException("The id: '%s' was not in the correct ObjectID format.".formatted(id)));
+        }
+
+        return taskService.deleteOneTask(new ObjectId(id));
     }
 
     private boolean checkIdIntegrity(String id) {

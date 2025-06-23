@@ -3,8 +3,10 @@ package com.example.reactive_backend.service;
 import com.example.reactive_backend.errorhandling.exception.NotFoundException;
 import com.example.reactive_backend.model.Task;
 import com.example.reactive_backend.repository.TaskRepository;
+import com.mongodb.client.result.DeleteResult;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -36,5 +38,9 @@ public class TaskService {
     public Mono<Task> updateOneTask(ObjectId id, Task task) {
         return taskRepository.updateOneTask(id, task)
                 .switchIfEmpty(Mono.error(new NotFoundException("Could not find task with id: %s".formatted(id))));
+    }
+
+    public Mono<DeleteResult> deleteOneTask(ObjectId id) {
+        return taskRepository.deleteOneTask(id);
     }
 }
