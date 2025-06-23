@@ -2,6 +2,7 @@ package com.example.reactive_backend.controller;
 
 import com.example.reactive_backend.errorhandling.exception.BadRequestException;
 import com.example.reactive_backend.errorhandling.exception.CouldNotInsertException;
+import com.example.reactive_backend.errorhandling.exception.CouldNotUpdateException;
 import com.example.reactive_backend.errorhandling.exception.NotFoundException;
 import com.example.reactive_backend.model.Task;
 import com.example.reactive_backend.service.TaskService;
@@ -210,6 +211,57 @@ public class TaskControllerTest {
 
         StepVerifier.create(res)
                 .expectError(CouldNotInsertException.class)
+                .verify();
+    }
+
+    @Test
+    @Description("Tests a 200 response for the updateOneTask() endpoint workflow and returns data.")
+    void testUpdateTaskHappyPath() {
+        ObjectId id = new ObjectId("685724022e21a9baae11f00f");
+        Task task = Task.builder().id(id).title("Test Update Title One").description("The testing description for updating test Title One").completed(false).build();
+
+        Mono<Task> taskMono = Mono.just(task);
+
+        when(service.updateOneTask(id, task)).thenReturn(taskMono);
+
+        Mono<Task> res = controller.updateOneTask(String.valueOf(id), task);
+
+        StepVerifier.create(res)
+                .expectSubscription()
+                .consumeNextWith(actual -> {
+                    assertThat(actual.getId()).isEqualTo(task.getId());
+                    assertThat(actual.getTitle()).isEqualTo(task.getTitle());
+                    assertThat(actual.getDescription()).isEqualTo(task.getDescription());
+                    assertThat(actual.isCompleted()).isEqualTo(task.isCompleted());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    @Description("Tests a 500 response for the updateOneTask() endpoint workflow and returns CouldNotUpdateException class.")
+    void testUpdateTaskUnhappyPath() {
+        ObjectId id = new ObjectId("685724022e21a9baae11f00f");
+        Task task = Task.builder().id(id).title("Test Title One").description("The testing description for test Title One").completed(false).build();
+
+        when(service.updateOneTask(id, task)).thenReturn(Mono.error(new CouldNotUpdateException("Could not insert Document into 'Tasks' Collection")));
+
+        Mono<Task> res = controller.updateOneTask(String.valueOf(id), task);
+
+        StepVerifier.create(res)
+                .expectError(CouldNotUpdateException.class)
+                .verify();
+    }
+
+    @Test
+    @Description("Tests a 400 response for the updateOneTask() endpoint workflow and returns RuntimeException so show the server failed.")
+    void testUpdateOneTaskEndpointUnhappyPathWithInvalidObjectIdString() {
+        String idString = "This is the invalid ObjectID string.";
+        Task task = Task.builder().title("Test Title One").description("The testing description for test Title One").completed(false).build();
+
+        Mono<Task> res = controller.updateOneTask(idString, task);
+
+        StepVerifier.create(res)
+                .expectError(BadRequestException.class)
                 .verify();
     }
 }

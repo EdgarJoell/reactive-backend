@@ -54,7 +54,7 @@ public class TaskController {
             return Mono.error(new BadRequestException("The id: '%s' was not in the correct ObjectID format.".formatted(id)));
         }
 
-        return taskService.updateOneTask(id, task);
+        return taskService.updateOneTask(new ObjectId(id), task);
     }
 
     private boolean checkIdIntegrity(String id) {

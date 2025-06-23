@@ -55,7 +55,7 @@ public class TaskRepository {
                 .onErrorMap(err -> new CouldNotInsertException("Could not insert Documents into 'Tasks' Collection.", HttpStatus.INTERNAL_SERVER_ERROR));
     }
 
-    public Mono<Task> updateOneTask(String id, Task task) {
+    public Mono<Task> updateOneTask(ObjectId id, Task task) {
         FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true);
         Query query = new Query(Criteria.where("_id").is(id));
         Update update = new Update()

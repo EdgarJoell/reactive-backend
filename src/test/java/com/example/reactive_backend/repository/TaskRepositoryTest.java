@@ -1,7 +1,7 @@
 package com.example.reactive_backend.repository;
 
 import com.example.reactive_backend.errorhandling.exception.CouldNotInsertException;
-import com.example.reactive_backend.errorhandling.exception.NotFoundException;
+import com.example.reactive_backend.errorhandling.exception.CouldNotUpdateException;
 import com.example.reactive_backend.model.Task;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
@@ -10,7 +10,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.annotation.Description;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -20,6 +24,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -206,6 +212,56 @@ public class TaskRepositoryTest {
         StepVerifier.create(res)
                 .expectSubscription()
                 .expectError(CouldNotInsertException.class)
+                .verify();
+    }
+
+    @Test
+    @Description("Tests a 200 response for the updateOneTask() endpoint workflow and returns data.")
+    void testUpdateTaskHappyPath() {
+        ObjectId id = new ObjectId("685724022e21a9baae11f00f");
+        Task task = Task.builder().id(id).title("Test Update Title One").description("The testing description for updating test Title One").completed(false).build();
+
+        Query query = new Query(Criteria.where("_id").is(id));
+        Update update = new Update()
+                .set("description", task.getDescription())
+                .set("title", task.getTitle())
+                .set("completed", task.isCompleted());
+
+        Mono<Task> taskMono = Mono.just(task);
+
+        when(db.findAndModify(eq(query), eq(update), any(FindAndModifyOptions.class), eq(Task.class))).thenReturn(taskMono);
+
+        Mono<Task> res = repository.updateOneTask(id, task);
+
+        StepVerifier.create(res)
+                .expectSubscription()
+                .consumeNextWith(actual -> {
+                    assertThat(actual.getId()).isEqualTo(task.getId());
+                    assertThat(actual.getTitle()).isEqualTo(task.getTitle());
+                    assertThat(actual.getDescription()).isEqualTo(task.getDescription());
+                    assertThat(actual.isCompleted()).isEqualTo(task.isCompleted());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    @Description("Tests a 500 response for the updateOneTask() endpoint workflow and returns CouldNotUpdateException class.")
+    void testUpdateTaskUnhappyPath() {
+        ObjectId id = new ObjectId("685724022e21a9baae11f00f");
+        Task task = Task.builder().id(id).title("Test Title One").description("The testing description for test Title One").completed(false).build();
+
+        Query query = new Query(Criteria.where("_id").is(id));
+        Update update = new Update()
+                .set("description", task.getDescription())
+                .set("title", task.getTitle())
+                .set("completed", task.isCompleted());
+
+        when(db.findAndModify(eq(query), eq(update), any(FindAndModifyOptions.class), eq(Task.class))).thenReturn(Mono.error(new CouldNotUpdateException("Could not insert Document into 'Tasks' Collection")));
+
+        Mono<Task> res = repository.updateOneTask(id, task);
+
+        StepVerifier.create(res)
+                .expectError(CouldNotUpdateException.class)
                 .verify();
     }
 }

@@ -33,7 +33,7 @@ public class TaskService {
         return taskRepository.createTasks(tasks);
     }
 
-    public Mono<Task> updateOneTask(String id, Task task) {
+    public Mono<Task> updateOneTask(ObjectId id, Task task) {
         return taskRepository.updateOneTask(id, task)
                 .switchIfEmpty(Mono.error(new NotFoundException("Could not find task with id: %s".formatted(id))));
     }
