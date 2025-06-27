@@ -56,4 +56,16 @@ public class GlobalExceptionHandler {
 
         return Mono.just(error);
     }
+
+    @ExceptionHandler(BadRequestException.class)
+    public Mono<ErrorAdviceDto> returnBadRequestErrorAdvice(NotFoundException exception, ServerWebExchange exchange) {
+        ErrorAdviceDto error = ErrorAdviceDto.builder()
+                .path(exchange.getRequest().getPath().toString())
+                .message(exception.getMessage())
+                .error(HttpStatus.BAD_REQUEST)
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .build();
+
+        return Mono.just(error);
+    }
 }
