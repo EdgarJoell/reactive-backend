@@ -3,7 +3,6 @@ package com.example.reactive_backend.controller;
 import com.example.reactive_backend.errorhandling.exception.*;
 import com.example.reactive_backend.model.Task;
 import com.example.reactive_backend.service.TaskService;
-import com.mongodb.client.result.DeleteResult;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,7 +10,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.annotation.Description;
-import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -158,7 +156,7 @@ public class TaskControllerTest {
     void testCreateNewTaskUnhappyPath() {
         Task task = Task.builder().title("Test Title One").description("The testing description for test Title One").completed(false).build();
 
-        when(service.createOneTask(task)).thenReturn(Mono.error(new CouldNotInsertException("Could not insert Document into 'Tasks' Collection", HttpStatus.INTERNAL_SERVER_ERROR)));
+        when(service.createOneTask(task)).thenReturn(Mono.error(new CouldNotInsertException("Could not insert Document into 'Tasks' Collection")));
 
         Mono<Task> res = controller.createOneTask(task);
 
@@ -203,7 +201,7 @@ public class TaskControllerTest {
         Task task2 = Task.builder().id(new ObjectId()).title("Test Group Insert Title Two").description("The testing description for test Title Two").completed(true).build();
         ArrayList<Task> taskList = new ArrayList<>(Arrays.asList(task1, task2));
 
-        when(service.createTasks(taskList)).thenReturn(Flux.error(new CouldNotInsertException("Could not insert Document into 'Tasks' Collection", HttpStatus.INTERNAL_SERVER_ERROR)));
+        when(service.createTasks(taskList)).thenReturn(Flux.error(new CouldNotInsertException("Could not insert Document into 'Tasks' Collection")));
 
         Flux<Task> res = controller.createTasks(taskList);
 
@@ -264,28 +262,44 @@ public class TaskControllerTest {
     }
 
     @Test
-    @Description("Tests for 204 response for the deleteOneTask() endpoint and should return no content")
+    @Description("Tests happy path for deleteOneTask.")
     void testDeleteOneTaskEndpointHappyPath() {
         ObjectId id = new ObjectId("685724022e21a9baae11f00f");
+        Task task = Task.builder().id(id).title("Test Title One").description("The testing description for test Title One").completed(false).build();
 
-        when(service.deleteOneTask(id)).thenReturn(Mono.empty());
+        when(service.deleteOneTask(id)).thenReturn(Mono.just(task));
 
-        Mono<DeleteResult> res = controller.deleteOneTask(id.toString());
+        Mono<Task> res = controller.deleteOneTask(id.toString());
 
         StepVerifier.create(res)
                 .expectSubscription()
-                .expectNext()
-                .expectComplete();
+                .expectNext(task)
+                .verifyComplete();
     }
 
     @Test
-    @Description("Tests for 204 response for the deleteOneTask() endpoint and should return no content")
+    @Description("Tests unhappy path for deleteOneRecord but no Document was found.")
+    void testDeleteOneTaskEndpointUnhappyPathNotFound() {
+        ObjectId id = new ObjectId("685724022e21a9baae11f00f");
+
+        when(service.deleteOneTask(id)).thenReturn(Mono.error(new NotFoundException("No Document with this id.")));
+
+        Mono<Task> res = controller.deleteOneTask(id.toString());
+
+        StepVerifier.create(res)
+                .expectSubscription()
+                .expectError(NotFoundException.class)
+                .verify();
+    }
+
+    @Test
+    @Description("Tests unhappy path for deleteOneRecord but an unexpected error occurred.")
     void testDeleteOneTaskEndpointUnhappyPath() {
         ObjectId id = new ObjectId("685724022e21a9baae11f00f");
 
         when(service.deleteOneTask(id)).thenReturn(Mono.error(new CouldNotDeleteException("Unexpected error. Could not delete.")));
 
-        Mono<DeleteResult> res = controller.deleteOneTask(id.toString());
+        Mono<Task> res = controller.deleteOneTask(id.toString());
 
         StepVerifier.create(res)
                 .expectSubscription()
@@ -294,9 +308,9 @@ public class TaskControllerTest {
     }
 
     @Test
-    @Description("Tests for 204 response for the deleteOneTask() endpoint and should return no content")
+    @Description("Tests unhappy path for deleteOneRecord but ID was in the incorrect format.")
     void testDeleteOneTaskEndpointUnhappyPathWithBadId() {
-        Mono<DeleteResult> res = controller.deleteOneTask("Bad ID format");
+        Mono<Task> res = controller.deleteOneTask("Bad ID format");
 
         StepVerifier.create(res)
                 .expectError(BadRequestException.class)

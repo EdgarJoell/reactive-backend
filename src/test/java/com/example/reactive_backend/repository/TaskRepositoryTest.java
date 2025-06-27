@@ -4,7 +4,6 @@ import com.example.reactive_backend.errorhandling.exception.CouldNotDeleteExcept
 import com.example.reactive_backend.errorhandling.exception.CouldNotInsertException;
 import com.example.reactive_backend.errorhandling.exception.CouldNotUpdateException;
 import com.example.reactive_backend.model.Task;
-import com.mongodb.client.result.DeleteResult;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,7 +16,6 @@ import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -28,7 +26,6 @@ import java.util.Arrays;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -162,7 +159,7 @@ public class TaskRepositoryTest {
     void testCreateNewTaskUnhappyPath() {
         Task task = Task.builder().title("Test Title One").description("The testing description for test Title One").completed(false).build();
 
-        when(db.insert(task)).thenReturn(Mono.error(new CouldNotInsertException("Could not insert Document into 'Tasks' Collection", HttpStatus.INTERNAL_SERVER_ERROR)));
+        when(db.insert(task)).thenReturn(Mono.error(new CouldNotInsertException("Could not insert Document into 'Tasks' Collection")));
 
         Mono<Task> res = repository.createOneTask(task);
 
@@ -208,7 +205,7 @@ public class TaskRepositoryTest {
         Task task2 = Task.builder().id(new ObjectId()).title("Test Group Insert Title One").description("The testing description for Test Group Insert Title One").completed(false).build();
         ArrayList<Task> taskList = new ArrayList<>(Arrays.asList(task1, task2));
 
-        when(db.insertAll(taskList)).thenReturn(Flux.error(new CouldNotInsertException("Could not insert Document into 'Tasks' Collection", HttpStatus.INTERNAL_SERVER_ERROR)));
+        when(db.insertAll(taskList)).thenReturn(Flux.error(new CouldNotInsertException("Could not insert Document into 'Tasks' Collection")));
 
         Flux<Task> res = repository.createTasks(taskList);
 
@@ -272,18 +269,32 @@ public class TaskRepositoryTest {
     @Description("Test the happy path to delete a Task object from the DB.")
     void testDeleteOneTaskHappyPath() {
         ObjectId id = new ObjectId("6857579a7b4c57437855095b");
+        Task task = Task.builder().id(id).title("Test Title One").description("The testing description for test Title One").completed(false).build();
         Query query = new Query(Criteria.where("_id").is(id));
-        DeleteResult mockResult = mock(DeleteResult.class);
-        
-        when(mockResult.wasAcknowledged()).thenReturn(true);
 
-        when(db.remove(eq(query), eq(Task.class))).thenReturn(Mono.just(mockResult));
+        when(db.findAndRemove(eq(query), eq(Task.class))).thenReturn(Mono.just(task));
 
-        Mono<DeleteResult> res = repository.deleteOneTask(id);
+        Mono<Task> res = repository.deleteOneTask(id);
 
         StepVerifier.create(res)
                 .expectSubscription()
-                .expectNextMatches(DeleteResult::wasAcknowledged)
+                .expectNext(task)
+                .verifyComplete();
+    }
+
+    @Test
+    @Description("Test the happy path to delete a Task object from the DB but with empty response.")
+    void testDeleteOneTaskHappyPathWithEmptyResponse() {
+        ObjectId id = new ObjectId("6857579a7b4c57437855095b");
+        Query query = new Query(Criteria.where("_id").is(id));
+
+        when(db.findAndRemove(eq(query), eq(Task.class))).thenReturn(Mono.empty());
+
+        Mono<Task> res = repository.deleteOneTask(id);
+
+        StepVerifier.create(res)
+                .expectSubscription()
+                .expectNext()
                 .verifyComplete();
     }
 
@@ -292,13 +303,10 @@ public class TaskRepositoryTest {
     void testDeleteOneTaskUnhappyPath() {
         ObjectId id = new ObjectId("6857579a7b4c57437855095b");
         Query query = new Query(Criteria.where("_id").is(id));
-        DeleteResult mockResult = mock(DeleteResult.class);
 
-        when(mockResult.wasAcknowledged()).thenReturn(false);
+        when(db.findAndRemove(eq(query), eq(Task.class))).thenReturn(Mono.error(new CouldNotDeleteException("Couldn't delete the record from the DB.")));
 
-        when(db.remove(eq(query), eq(Task.class))).thenReturn(Mono.just(mockResult));
-
-        Mono<DeleteResult> res = repository.deleteOneTask(id);
+        Mono<Task> res = repository.deleteOneTask(id);
 
         StepVerifier.create(res)
                 .expectError(CouldNotDeleteException.class)
