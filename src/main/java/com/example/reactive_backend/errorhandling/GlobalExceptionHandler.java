@@ -74,8 +74,8 @@ public class GlobalExceptionHandler {
         ErrorAdviceDto error = ErrorAdviceDto.builder()
                 .path(exchange.getRequest().getPath().toString())
                 .message(exception.getMessage())
-                .error(HttpStatus.NOT_FOUND)
-                .statusCode(HttpStatus.NOT_FOUND.value())
+                .error(HttpStatus.INTERNAL_SERVER_ERROR)
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .build();
 
         return Mono.just(error);
