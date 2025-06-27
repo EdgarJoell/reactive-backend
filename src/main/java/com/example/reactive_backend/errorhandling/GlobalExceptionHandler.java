@@ -20,4 +20,16 @@ public class GlobalExceptionHandler {
 
         return Mono.just(error);
     }
+
+    @ExceptionHandler(CouldNotInsertException.class)
+    public Mono<ErrorAdviceDto> returnCouldNotInsertErrorAdvice(NotFoundException exception, ServerWebExchange exchange) {
+        ErrorAdviceDto error = ErrorAdviceDto.builder()
+                .path(exchange.getRequest().getPath().toString())
+                .message(exception.getMessage())
+                .error(HttpStatus.INTERNAL_SERVER_ERROR)
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .build();
+
+        return Mono.just(error);
+    }
 }
