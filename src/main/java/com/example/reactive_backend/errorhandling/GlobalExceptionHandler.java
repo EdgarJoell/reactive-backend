@@ -1,0 +1,23 @@
+package com.example.reactive_backend.errorhandling;
+
+import com.example.reactive_backend.errorhandling.exception.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
+
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+    @ExceptionHandler(NotFoundException.class)
+    public Mono<ErrorAdviceDto> returnNotFoundErrorAdvice(NotFoundException exception, ServerWebExchange exchange) {
+        ErrorAdviceDto error = ErrorAdviceDto.builder()
+                .path(exchange.getRequest().getPath().toString())
+                .message(exception.getMessage())
+                .error(HttpStatus.NOT_FOUND)
+                .statusCode(HttpStatus.NOT_FOUND.value())
+                .build();
+
+        return Mono.just(error);
+    }
+}
