@@ -32,4 +32,16 @@ public class GlobalExceptionHandler {
 
         return Mono.just(error);
     }
+
+    @ExceptionHandler(CouldNotUpdateException.class)
+    public Mono<ErrorAdviceDto> returnCouldNotUpdateErrorAdvice(NotFoundException exception, ServerWebExchange exchange) {
+        ErrorAdviceDto error = ErrorAdviceDto.builder()
+                .path(exchange.getRequest().getPath().toString())
+                .message(exception.getMessage())
+                .error(HttpStatus.NOT_FOUND)
+                .statusCode(HttpStatus.NOT_FOUND.value())
+                .build();
+
+        return Mono.just(error);
+    }
 }
