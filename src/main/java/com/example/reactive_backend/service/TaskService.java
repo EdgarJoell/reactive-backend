@@ -40,7 +40,8 @@ public class TaskService {
                 .switchIfEmpty(Mono.error(new NotFoundException("Could not find task with id: %s".formatted(id))));
     }
 
-    public Mono<DeleteResult> deleteOneTask(ObjectId id) {
-        return taskRepository.deleteOneTask(id);
+    public Mono<Task> deleteOneTask(ObjectId id) {
+        return taskRepository.deleteOneTask(id)
+                .switchIfEmpty(Mono.error(new NotFoundException("Could not find task with id: %s".formatted(id))));
     }
 }
