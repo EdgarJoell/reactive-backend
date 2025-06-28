@@ -4,6 +4,7 @@ import com.example.reactive_backend.IntegrationTestConfig;
 import com.example.reactive_backend.ReactiveBackendIntegrationTest;
 import com.example.reactive_backend.controller.TaskController;
 import com.example.reactive_backend.errorhandling.ErrorAdviceDto;
+import com.example.reactive_backend.errorhandling.exception.CouldNotDeleteException;
 import com.example.reactive_backend.errorhandling.exception.CouldNotInsertException;
 import com.example.reactive_backend.errorhandling.exception.CouldNotUpdateException;
 import com.example.reactive_backend.errorhandling.exception.NotFoundException;
@@ -289,6 +290,43 @@ public class TaskControllerIntegrationTest extends ReactiveBackendIntegrationTes
                     assertThat(actual.getResponseBody().getPath()).isEqualTo("/api/task");
                     assertThat(actual.getResponseBody().getMessage()).isNotEmpty();
                     assertThat(actual.getResponseBody().getHttpMethod()).isEqualTo(HttpMethod.PUT.name());
+                });
+    }
+
+    @Test
+    void testDeleteOneTaskEndpoint() {
+        Task task = Task.builder().id(new ObjectId("685724022e21a9baae11f00f")).title("Integration Test Task").description("The description for the Document being returned.").completed(true).build();
+
+        when(mongoTemplate.findAndRemove(any(Query.class), eq(Task.class))).thenReturn(Mono.just(task));
+
+        webTestClient.delete()
+                .uri("/api/task?id=%s".formatted(id))
+                .exchange()
+                .expectStatus().is2xxSuccessful();
+    }
+
+    @Test
+    void testDeleteOneTaskEndpointCouldNotDeleteException() {
+        when(mongoTemplate.findAndRemove(any(Query.class), eq(Task.class))).thenReturn(Mono.error(new CouldNotDeleteException("Could not delete.")));
+
+        webTestClient.delete()
+                .uri("/api/task?id=%s".formatted(id))
+                .exchange()
+                .expectStatus().is5xxServerError();
+    }
+
+    @Test
+    void testDeleteOneTaskEndpointNotFoundException() {
+        webTestClient.delete()
+                .uri("/api/task?id=%s".formatted(badId))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(ErrorAdviceDto.class)
+                .consumeWith(actual -> {
+                    assertThat(actual.getResponseBody().getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+                    assertThat(actual.getResponseBody().getPath()).isEqualTo("/api/task");
+                    assertThat(actual.getResponseBody().getMessage()).isNotEmpty();
+                    assertThat(actual.getResponseBody().getHttpMethod()).isEqualTo(HttpMethod.DELETE.name());
                 });
     }
 }

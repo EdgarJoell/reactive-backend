@@ -80,7 +80,7 @@ public class TaskRepository {
 
         return mongoTemplate.findAndRemove(query, Task.class)
                 .doOnSubscribe(sub -> log.info("Attempting to delete Document with id: %s".formatted(id)))
-                .doOnSuccess(suc -> log.info("Successfully updated Document with id: %s".formatted(id)))
+                .doOnSuccess(suc -> log.info("Successfully deleted Document with id: %s".formatted(id)))
                 .doOnError(err -> log.error("An error occurred with this transaction. Document id: %s".formatted(id)))
                 .onErrorMap(err -> new CouldNotDeleteException("Could not delete Document with id: %s".formatted(id)));
     }
