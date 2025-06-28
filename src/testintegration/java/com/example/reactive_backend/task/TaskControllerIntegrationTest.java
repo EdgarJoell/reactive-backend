@@ -212,4 +212,83 @@ public class TaskControllerIntegrationTest extends ReactiveBackendIntegrationTes
                     assertThat(actual.getResponseBody().getHttpMethod()).isEqualTo(HttpMethod.POST.name());
                 });
     }
+
+    @Test
+    void testUpdateOneTaskEndpoint() {
+        Task task = Task.builder().id(new ObjectId(id)).title("Integration Test Task").description("The description for the Document being returned.").completed(true).build();
+
+        when(mongoTemplate.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class), eq(Task.class))).thenReturn(Mono.just(task));
+
+        webTestClient.put()
+                .uri("/api/task?id=%s".formatted(id))
+                .body(BodyInserters.fromValue(task))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(Task.class)
+                .isEqualTo(task);
+    }
+
+    @Test
+    void testUpdateOneTaskEndpointBadRequestException() {
+        Task task = Task.builder().id(new ObjectId(id)).title("Integration Test Task").description("The description for the Document being returned.").completed(true).build();
+
+        webTestClient.put()
+                .uri("/api/task?id=%s".formatted(badId))
+                .body(BodyInserters.fromValue(task))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(ErrorAdviceDto.class)
+                .consumeWith(actual -> {
+                    assertThat(actual.getResponseBody().getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+                    assertThat(actual.getResponseBody().getPath()).isEqualTo("/api/task");
+                    assertThat(actual.getResponseBody().getMessage()).isNotEmpty();
+                    assertThat(actual.getResponseBody().getHttpMethod()).isEqualTo(HttpMethod.PUT.name());
+                });
+    }
+
+    @Test
+    void testUpdateOneTaskEndpointNotFoundException() {
+        Task task = Task.builder().id(new ObjectId(id)).title("Integration Test Task").description("The description for the Document being returned.").completed(true).build();
+        Query query = new Query(Criteria.where("_id").is(id));
+        FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true);
+        Update update = new Update()
+                .set("description", task.getDescription())
+                .set("title", task.getTitle())
+                .set("completed", task.isCompleted());
+
+        when(mongoTemplate.findAndModify(eq(query), eq(update), eq(options), eq(Task.class))).thenReturn(Mono.empty());
+
+        webTestClient.put()
+                .uri("/api/task?id=%s".formatted(id))
+                .body(BodyInserters.fromValue(task))
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody(ErrorAdviceDto.class)
+                .consumeWith(actual -> {
+                    assertThat(actual.getResponseBody().getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR.value());
+                    assertThat(actual.getResponseBody().getPath()).isEqualTo("/api/task");
+                    assertThat(actual.getResponseBody().getMessage()).isNotEmpty();
+                    assertThat(actual.getResponseBody().getHttpMethod()).isEqualTo(HttpMethod.PUT.name());
+                });
+    }
+
+    @Test
+    void testUpdateOneTaskEndpointCouldNotUpdateException() {
+        Task task = Task.builder().id(new ObjectId(id)).title("Integration Test Task").description("The description for the Document being returned.").completed(true).build();
+
+        when(mongoTemplate.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class), eq(Task.class))).thenReturn(Mono.error(new CouldNotUpdateException("Could not update.")));
+
+        webTestClient.put()
+                .uri("/api/task?id=%s".formatted(id))
+                .body(BodyInserters.fromValue(task))
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody(ErrorAdviceDto.class)
+                .consumeWith(actual -> {
+                    assertThat(actual.getResponseBody().getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR.value());
+                    assertThat(actual.getResponseBody().getPath()).isEqualTo("/api/task");
+                    assertThat(actual.getResponseBody().getMessage()).isNotEmpty();
+                    assertThat(actual.getResponseBody().getHttpMethod()).isEqualTo(HttpMethod.PUT.name());
+                });
+    }
 }
