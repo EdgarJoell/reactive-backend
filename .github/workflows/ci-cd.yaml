@@ -20,8 +20,8 @@ jobs:
           java-version: '17'
           distribution: 'corretto'
 
-      - name: Build with Gradle (no tests)
-        run: ./gradlew build -x test
+      - name: Build with Maven (skip tests)
+        run: mvn clean install -DskipTests
 
   test:
     runs-on: ubuntu-latest
@@ -48,7 +48,7 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Run Tests
-        run: ./gradlew test
+      - name: Run Tests with Maven
+        run: mvn test
         env:
           SPRING_PROFILES_ACTIVE: integration
