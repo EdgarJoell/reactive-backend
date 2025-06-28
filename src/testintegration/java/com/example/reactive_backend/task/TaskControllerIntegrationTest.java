@@ -2,18 +2,13 @@ package com.example.reactive_backend.task;
 
 import com.example.reactive_backend.IntegrationTestConfig;
 import com.example.reactive_backend.ReactiveBackendIntegrationTest;
-import com.example.reactive_backend.controller.TaskController;
 import com.example.reactive_backend.errorhandling.ErrorAdviceDto;
 import com.example.reactive_backend.errorhandling.exception.CouldNotDeleteException;
 import com.example.reactive_backend.errorhandling.exception.CouldNotInsertException;
 import com.example.reactive_backend.errorhandling.exception.CouldNotUpdateException;
-import com.example.reactive_backend.errorhandling.exception.NotFoundException;
 import com.example.reactive_backend.model.Task;
-import com.example.reactive_backend.repository.TaskRepository;
-import com.example.reactive_backend.service.TaskService;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.query.Criteria;
