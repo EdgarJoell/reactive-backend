@@ -15,6 +15,7 @@ public class GlobalExceptionHandler {
     public Mono<ErrorAdviceDto> returnNotFoundErrorAdvice(NotFoundException exception, ServerWebExchange exchange) {
         ErrorAdviceDto error = ErrorAdviceDto.builder()
                 .path(exchange.getRequest().getPath().toString())
+                .httpMethod(exchange.getRequest().getMethod().name())
                 .message(exception.getMessage())
                 .error(HttpStatus.NOT_FOUND)
                 .statusCode(HttpStatus.NOT_FOUND.value())
@@ -28,6 +29,7 @@ public class GlobalExceptionHandler {
     public Mono<ErrorAdviceDto> returnCouldNotInsertErrorAdvice(CouldNotInsertException exception, ServerWebExchange exchange) {
         ErrorAdviceDto error = ErrorAdviceDto.builder()
                 .path(exchange.getRequest().getPath().toString())
+                .httpMethod(exchange.getRequest().getMethod().name())
                 .message(exception.getMessage())
                 .error(HttpStatus.INTERNAL_SERVER_ERROR)
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
@@ -41,6 +43,7 @@ public class GlobalExceptionHandler {
     public Mono<ErrorAdviceDto> returnCouldNotUpdateErrorAdvice(CouldNotUpdateException exception, ServerWebExchange exchange) {
         ErrorAdviceDto error = ErrorAdviceDto.builder()
                 .path(exchange.getRequest().getPath().toString())
+                .httpMethod(exchange.getRequest().getMethod().name())
                 .message(exception.getMessage())
                 .error(HttpStatus.INTERNAL_SERVER_ERROR)
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
@@ -54,6 +57,7 @@ public class GlobalExceptionHandler {
     public Mono<ErrorAdviceDto> returnCouldNotDeleteErrorAdvice(CouldNotDeleteException exception, ServerWebExchange exchange) {
         ErrorAdviceDto error = ErrorAdviceDto.builder()
                 .path(exchange.getRequest().getPath().toString())
+                .httpMethod(exchange.getRequest().getMethod().name())
                 .message(exception.getMessage())
                 .error(HttpStatus.INTERNAL_SERVER_ERROR)
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
@@ -67,6 +71,7 @@ public class GlobalExceptionHandler {
     public Mono<ErrorAdviceDto> returnBadRequestErrorAdvice(BadRequestException exception, ServerWebExchange exchange) {
         ErrorAdviceDto error = ErrorAdviceDto.builder()
                 .path(exchange.getRequest().getPath().toString())
+                .httpMethod(exchange.getRequest().getMethod().name())
                 .message(exception.getMessage())
                 .error(HttpStatus.BAD_REQUEST)
                 .statusCode(HttpStatus.BAD_REQUEST.value())
@@ -80,6 +85,7 @@ public class GlobalExceptionHandler {
     public Mono<ErrorAdviceDto> returnGlobalExceptionErrorAdvice(RuntimeException exception, ServerWebExchange exchange) {
         ErrorAdviceDto error = ErrorAdviceDto.builder()
                 .path(exchange.getRequest().getPath().toString())
+                .httpMethod(exchange.getRequest().getMethod().name())
                 .message(exception.getMessage())
                 .error(HttpStatus.INTERNAL_SERVER_ERROR)
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
