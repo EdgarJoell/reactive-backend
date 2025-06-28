@@ -22,6 +22,9 @@ import org.springframework.web.reactive.function.BodyInserters;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
@@ -160,6 +163,45 @@ public class TaskControllerIntegrationTest extends ReactiveBackendIntegrationTes
         webTestClient.post()
                 .uri("/api/task")
                 .body(BodyInserters.fromValue(task))
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody(ErrorAdviceDto.class)
+                .consumeWith(actual -> {
+                    assertThat(actual.getResponseBody().getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR.value());
+                    assertThat(actual.getResponseBody().getPath()).isEqualTo("/api/task");
+                    assertThat(actual.getResponseBody().getMessage()).isNotEmpty();
+                    assertThat(actual.getResponseBody().getHttpMethod()).isEqualTo(HttpMethod.POST.name());
+                });
+    }
+
+    @Test
+    void testCreateTasksEndpoint() {
+        Task task = Task.builder().title("Integration Test Task").description("The description for the Document being returned.").completed(true).build();
+
+        when(mongoTemplate.insert(task)).thenReturn(Mono.just(task));
+        when(service.createOneTask(task)).thenReturn(Mono.just(task));
+
+        webTestClient.post()
+                .uri("/api/task")
+                .body(BodyInserters.fromValue(task))
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(Task.class)
+                .isEqualTo(task);
+    }
+
+    @Test
+    void testCreateTasksEndpointCouldNotInsertException() {
+        Task task1 = Task.builder().title("Integration Test Task One").description("The description for the first Document being returned.").completed(true).build();
+        Task task2 = Task.builder().title("Integration Test Task Two").description("The description for the second Document being returned.").completed(true).build();
+        ArrayList<Task> taskList = new ArrayList<>(Arrays.asList(task1, task2));
+
+        when(mongoTemplate.insertAll(taskList)).thenReturn(Flux.error(new CouldNotInsertException("Could not insert Documents.")));
+        when(service.createTasks(taskList)).thenReturn(Flux.error(new CouldNotInsertException("Could not insert Documents.")));
+
+        webTestClient.post()
+                .uri("/api/task")
+                .body(BodyInserters.fromValue(taskList))
                 .exchange()
                 .expectStatus().is5xxServerError()
                 .expectBody(ErrorAdviceDto.class)
