@@ -35,15 +35,6 @@ import static org.mockito.Mockito.when;
 
 @Import(IntegrationTestConfig.class)
 public class TaskControllerIntegrationTest extends ReactiveBackendIntegrationTest {
-    @Autowired
-    private TaskController controller;
-
-    @Autowired
-    private TaskService service;
-
-    @Autowired
-    private TaskRepository repository;
-
     private final String id = "685724022e21a9baae11f00f";
     private final String badId = "685724022";
 
