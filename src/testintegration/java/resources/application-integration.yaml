@@ -1,0 +1,12 @@
+spring:
+  data:
+    mongodb:
+      uri: "mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+2.5.3"
+      database: reactive_backend_db_test
+  application:
+    name: "reactive-backend"
+  main:
+    web-application-type: reactive
+  logging:
+    level:
+      org.springframework.data.mongodb.core: DEBUG
