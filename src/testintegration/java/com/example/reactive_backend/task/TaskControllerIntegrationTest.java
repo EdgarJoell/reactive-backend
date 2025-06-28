@@ -4,6 +4,7 @@ import com.example.reactive_backend.IntegrationTestConfig;
 import com.example.reactive_backend.ReactiveBackendIntegrationTest;
 import com.example.reactive_backend.controller.TaskController;
 import com.example.reactive_backend.errorhandling.ErrorAdviceDto;
+import com.example.reactive_backend.errorhandling.exception.CouldNotInsertException;
 import com.example.reactive_backend.errorhandling.exception.NotFoundException;
 import com.example.reactive_backend.model.Task;
 import com.example.reactive_backend.service.TaskService;
@@ -130,6 +131,43 @@ public class TaskControllerIntegrationTest extends ReactiveBackendIntegrationTes
                     assertThat(actual.getResponseBody().getPath()).isEqualTo("/api/task");
                     assertThat(actual.getResponseBody().getMessage()).isNotEmpty();
                     assertThat(actual.getResponseBody().getHttpMethod()).isEqualTo(HttpMethod.GET.name());
+                });
+    }
+
+    @Test
+    void testCreateOneTaskEndpoint() {
+        Task task = Task.builder().title("Integration Test Task").description("The description for the Document being returned.").completed(true).build();
+
+        when(mongoTemplate.insert(task)).thenReturn(Mono.just(task));
+        when(service.createOneTask(task)).thenReturn(Mono.just(task));
+
+        webTestClient.post()
+                .uri("/api/task")
+                .body(BodyInserters.fromValue(task))
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(Task.class)
+                .isEqualTo(task);
+    }
+
+    @Test
+    void testCreateOneTaskEndpointCouldNotInsertException() {
+        Task task = Task.builder().title("Integration Test Task").description("The description for the Document being returned.").completed(true).build();
+
+        when(mongoTemplate.insert(task)).thenReturn(Mono.error(new CouldNotInsertException("Could not insert.")));
+        when(service.createOneTask(task)).thenReturn(Mono.error(new CouldNotInsertException("Could not insert.")));
+
+        webTestClient.post()
+                .uri("/api/task")
+                .body(BodyInserters.fromValue(task))
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody(ErrorAdviceDto.class)
+                .consumeWith(actual -> {
+                    assertThat(actual.getResponseBody().getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR.value());
+                    assertThat(actual.getResponseBody().getPath()).isEqualTo("/api/task");
+                    assertThat(actual.getResponseBody().getMessage()).isNotEmpty();
+                    assertThat(actual.getResponseBody().getHttpMethod()).isEqualTo(HttpMethod.POST.name());
                 });
     }
 }
