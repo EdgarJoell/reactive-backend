@@ -3,6 +3,7 @@ package com.example.reactive_backend.errorhandling;
 import com.example.reactive_backend.errorhandling.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -10,6 +11,7 @@ import reactor.core.publisher.Mono;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(NotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     public Mono<ErrorAdviceDto> returnNotFoundErrorAdvice(NotFoundException exception, ServerWebExchange exchange) {
         ErrorAdviceDto error = ErrorAdviceDto.builder()
                 .path(exchange.getRequest().getPath().toString())
@@ -22,7 +24,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(CouldNotInsertException.class)
-    public Mono<ErrorAdviceDto> returnCouldNotInsertErrorAdvice(NotFoundException exception, ServerWebExchange exchange) {
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public Mono<ErrorAdviceDto> returnCouldNotInsertErrorAdvice(CouldNotInsertException exception, ServerWebExchange exchange) {
         ErrorAdviceDto error = ErrorAdviceDto.builder()
                 .path(exchange.getRequest().getPath().toString())
                 .message(exception.getMessage())
@@ -34,7 +37,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(CouldNotUpdateException.class)
-    public Mono<ErrorAdviceDto> returnCouldNotUpdateErrorAdvice(NotFoundException exception, ServerWebExchange exchange) {
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public Mono<ErrorAdviceDto> returnCouldNotUpdateErrorAdvice(CouldNotUpdateException exception, ServerWebExchange exchange) {
         ErrorAdviceDto error = ErrorAdviceDto.builder()
                 .path(exchange.getRequest().getPath().toString())
                 .message(exception.getMessage())
@@ -46,7 +50,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(CouldNotDeleteException.class)
-    public Mono<ErrorAdviceDto> returnCouldNotDeleteErrorAdvice(NotFoundException exception, ServerWebExchange exchange) {
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public Mono<ErrorAdviceDto> returnCouldNotDeleteErrorAdvice(CouldNotDeleteException exception, ServerWebExchange exchange) {
         ErrorAdviceDto error = ErrorAdviceDto.builder()
                 .path(exchange.getRequest().getPath().toString())
                 .message(exception.getMessage())
@@ -58,7 +63,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(BadRequestException.class)
-    public Mono<ErrorAdviceDto> returnBadRequestErrorAdvice(NotFoundException exception, ServerWebExchange exchange) {
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Mono<ErrorAdviceDto> returnBadRequestErrorAdvice(BadRequestException exception, ServerWebExchange exchange) {
         ErrorAdviceDto error = ErrorAdviceDto.builder()
                 .path(exchange.getRequest().getPath().toString())
                 .message(exception.getMessage())
@@ -70,7 +76,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(RuntimeException.class)
-    public Mono<ErrorAdviceDto> returnGlobalExceptionErrorAdvice(NotFoundException exception, ServerWebExchange exchange) {
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public Mono<ErrorAdviceDto> returnGlobalExceptionErrorAdvice(RuntimeException exception, ServerWebExchange exchange) {
         ErrorAdviceDto error = ErrorAdviceDto.builder()
                 .path(exchange.getRequest().getPath().toString())
                 .message(exception.getMessage())
