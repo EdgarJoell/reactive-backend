@@ -39,6 +39,14 @@ public class TaskRepository {
                 .onErrorMap(err -> new RuntimeException("An error occurred: ", err));
     }
 
+    public Flux<Task> getAllTasksForOneUserAccount(ObjectId id) {
+        Query query = new Query(Criteria.where("userId").is(id));
+        return mongoTemplate.find(query, Task.class)
+                .doOnSubscribe(sub -> log.info("Attempting to retrieve all tasks from Collection with userId: %s".formatted(id)))
+                .doOnComplete(() -> log.info("Successfully retrieved all Tasks from Collection with userId: %s".formatted(id)))
+                .onErrorMap(err -> new RuntimeException("An error occurred: ", err));
+    }
+
     public Mono<Task> createOneTask(Task newTask) {
         return mongoTemplate.insert(newTask)
                 .doOnSubscribe(sub -> log.info("Creating new Document in 'Tasks' Collection"))
@@ -61,7 +69,8 @@ public class TaskRepository {
         Update update = new Update()
                 .set("description", task.getDescription())
                 .set("title", task.getTitle())
-                .set("completed", task.isCompleted());
+                .set("completed", task.isCompleted())
+                .set("userId", task.getUserId());
 
         return mongoTemplate.findAndModify(query, update, options, Task.class)
                 .doOnSubscribe(sub -> log.info("Attempting to update Document with id: %s".formatted(id)))
