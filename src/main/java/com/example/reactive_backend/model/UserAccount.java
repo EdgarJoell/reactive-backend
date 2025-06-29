@@ -6,22 +6,27 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.jackson.Jacksonized;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@Document("tasks") // This line here will tell the Reactive Mongo Client which collection to find.
+import java.util.ArrayList;
+
+@Data
 @RequiredArgsConstructor
 @AllArgsConstructor
-@Data
+@Jacksonized
 @Builder(toBuilder = true)
-public class Task {
+@Document("user_accounts")
+public class UserAccount {
     @Id
     @JsonSerialize(using = ToStringSerializer.class)
     private ObjectId id;
-    private String title;
-    private String description;
-    private boolean completed;
+    private String firstName;
+    private String lastName;
+    private String email;
+    private String password;
     @JsonSerialize(using = ToStringSerializer.class)
-    private ObjectId userId;
+    private ArrayList<ObjectId> taskIds;
 }
